@@ -7,6 +7,8 @@
 * of patent rights can be found in the PATENTS file in the same directory.
 */
 
+/*移除底部的支撑杆*/
+
 #pragma once
 
 #include <vector>

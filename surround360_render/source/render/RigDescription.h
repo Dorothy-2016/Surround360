@@ -7,6 +7,8 @@
 * of patent rights can be found in the PATENTS file in the same directory.
 */
 
+/*camera.h处理单个camera,RigDescription.h处理14个环侧camera*/
+
 #pragma once
 
 #include <exception>

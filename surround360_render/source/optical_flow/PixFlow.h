@@ -29,13 +29,14 @@ using namespace cv;
 using namespace cv::detail;
 
 template <
+    //用户直接调整
   bool UseDirectionalRegularization,
   int MaxPercentage = 0 // how far to look when initializing flow
 >
 struct PixFlow : public OpticalFlowInterface {
 
   static constexpr int kPyrMinImageSize               = 24;
-  static constexpr int kPyrMaxLevels                  = 1000;
+  static constexpr int kPyrMaxLevels                  = 1000; //1000层金字塔？不是最高4层左右么……不理解
   static constexpr float kGradEpsilon                 = 0.001f; // for finite differences
   static constexpr float kUpdateAlphaThreshold        = 0.9f;   // pixels with alpha below this aren't updated by proposals
   static constexpr int kMedianBlurSize                = 5;      // medianBlur max size is 5 pixels for CV_32FC2
@@ -76,9 +77,10 @@ struct PixFlow : public OpticalFlowInterface {
 
   // these will be modified when running computeOpticalFlow. it becomes true if prevFlow
   // is non-empty.
+    //如果有“前一帧”就为ture
   bool usePrevFlowTemporalRegularization = false;
 
-  void computeOpticalFlow(
+  void computeOpticalFlow(//用金字塔LK算光流
       const Mat& rgba0byte,
       const Mat& rgba1byte,
       const Mat& prevFlow,
@@ -93,11 +95,13 @@ struct PixFlow : public OpticalFlowInterface {
     Mat rgba0byteDownscaled, rgba1byteDownscaled, prevFlowDownscaled;
     Mat prevI0BGRADownscaled, prevI1BGRADownscaled;
     cv::Size originalSize = rgba0byte.size();
+      //将图片以downscaleFactor比例缩小
     cv::Size downscaleSize(
       rgba0byte.cols * downscaleFactor, rgba0byte.rows * downscaleFactor);
     resize(rgba0byte, rgba0byteDownscaled, downscaleSize, 0, 0, CV_INTER_CUBIC);
     resize(rgba1byte, rgba1byteDownscaled, downscaleSize, 0, 0, CV_INTER_CUBIC);
     Mat motion = Mat(downscaleSize, CV_32F);
+      //图片维度大于0
     if (prevFlow.dims > 0) {
       usePrevFlowTemporalRegularization = true;
       resize(prevFlow, prevFlowDownscaled, downscaleSize, 0, 0, CV_INTER_CUBIC);
@@ -107,6 +111,7 @@ struct PixFlow : public OpticalFlowInterface {
       resize(prevI1BGRA, prevI1BGRADownscaled, downscaleSize, 0, 0, CV_INTER_CUBIC);
 
       // do motion detection vs. previous frame's images
+        // motion[y][x] = 当前压缩画面的B、G、R的差的绝对值的总和
       for (int y = 0; y < rgba0byteDownscaled.rows; ++y) {
         for (int x = 0; x < rgba0byteDownscaled.cols; ++x) {
           motion.at<float>(y, x) =
@@ -120,23 +125,27 @@ struct PixFlow : public OpticalFlowInterface {
     // convert to various color spaces
     Mat I0Grey, I1Grey, I0, I1, alpha0, alpha1;
     vector<Mat> channels0, channels1;
+      //取出rgba0byteDownscaled的每列像素的信息到channels0中
     split(rgba0byteDownscaled, channels0);
     split(rgba1byteDownscaled, channels1);
+      //转换色域编码 BGRA to GRAY
     cvtColor(rgba0byteDownscaled, I0Grey,  CV_BGRA2GRAY);
     cvtColor(rgba1byteDownscaled, I1Grey,  CV_BGRA2GRAY);
-
+      //转换Mat到一定的格式范围 0 - 1 float
     I0Grey.convertTo(I0, CV_32F);
     I1Grey.convertTo(I1, CV_32F);
     I0 /= 255.0f;
     I1 /= 255.0f;
+      // 单独处理 alpha 透明度
     channels0[3].convertTo(alpha0, CV_32F);
     channels1[3].convertTo(alpha1, CV_32F);
     alpha0 /= 255.0f;
     alpha1 /= 255.0f;
-
+      //高斯模糊 覆盖I0 I1
     GaussianBlur(I0, I0, Size(kPreBlurKernelWidth, kPreBlurKernelWidth), kPreBlurSigma);
     GaussianBlur(I1, I1, Size(kPreBlurKernelWidth, kPreBlurKernelWidth), kPreBlurSigma);
 
+    //建立各个参数的金字塔模型
     vector<Mat> pyramidI0       = buildPyramid(I0);
     vector<Mat> pyramidI1       = buildPyramid(I1);
     vector<Mat> pyramidAlpha0   = buildPyramid(alpha0);
@@ -165,7 +174,7 @@ struct PixFlow : public OpticalFlowInterface {
       if (usePrevFlowTemporalRegularization) {
         adjustFlowTowardPrevious(prevFlowPyramid[level], motionPyramid[level], flow);
       }
-
+        //进入下一层金字塔，光流变大
       if (level > 0) { // scale the flow up to the next size
         resize(flow, flow, pyramidI0[level - 1].size(), 0, 0, CV_INTER_CUBIC);
         flow *= (1.0f / pyrScaleFactor);
@@ -173,6 +182,7 @@ struct PixFlow : public OpticalFlowInterface {
     }
 
     // scale the flow result back to full size
+      //还原光流到原来的大小
     resize(flow, flow, originalSize, 0, 0, CV_INTER_LINEAR);
     flow *= (1.0f / downscaleFactor);
     GaussianBlur(
@@ -340,7 +350,7 @@ struct PixFlow : public OpticalFlowInterface {
       }
     }
   }
-
+//补丁匹配传播和搜索
   void patchMatchPropagationAndSearch(
       const Mat& I0,
       const Mat& I1,
@@ -358,7 +368,7 @@ struct PixFlow : public OpticalFlowInterface {
     Sobel(I1, I1x, kSameDepth, 1, 0, kKernelSize, 1, 0.0f, BORDER_REPLICATE);
     Sobel(I1, I1y, kSameDepth, 0, 1, kKernelSize, 1, 0.0f, BORDER_REPLICATE);
 
-    // blur gradients
+    // blur gradients模糊梯度
     const cv::Size kGradientBlurSize(kGradientBlurKernelWidth, kGradientBlurKernelWidth);
     GaussianBlur(I0x, I0x, kGradientBlurSize, kGradientBlurSigma);
     GaussianBlur(I0y, I0y, kGradientBlurSize, kGradientBlurSigma);
@@ -368,13 +378,13 @@ struct PixFlow : public OpticalFlowInterface {
     if (flow.empty()) {
       // initialize to all zeros
       flow = Mat::zeros(I0.size(), CV_32FC2);
-      // optionally look for a better flow
+      // optionally look for a better flow 初始化光流
       if (MaxPercentage > 0 && hint != DirectionHint::UNKNOWN) {
         adjustInitialFlow(I0, I1, alpha0, alpha1, flow, hint);
       }
     }
 
-    // blur flow. we will regularize against this
+    // blur flow. we will regularize against this 高斯模糊
     Mat blurredFlow;
     GaussianBlur(
       flow,
@@ -384,7 +394,7 @@ struct PixFlow : public OpticalFlowInterface {
 
     const cv::Size imgSize = I0.size();
 
-    // sweep from top/left
+    // sweep from top/left 从左上扫描相邻图片的alpha亮度值，大于阈值就
     for (int y = 0; y < imgSize.height; ++y) {
       for (int x = 0; x < imgSize.width; ++x) {
         if (alpha0.at<float>(y, x) > kUpdateAlphaThreshold && alpha1.at<float>(y, x) > kUpdateAlphaThreshold) {
@@ -395,9 +405,10 @@ struct PixFlow : public OpticalFlowInterface {
         }
       }
     }
+      //中位值模糊
     medianBlur(flow, flow, kMedianBlurSize);
 
-    // sweep from bottom/right
+    // sweep from bottom/right 从右下扫描
     for (int y = imgSize.height - 1; y >= 0; --y) {
       for (int x = imgSize.width - 1; x >= 0; --x) {
         if (alpha0.at<float>(y, x) > kUpdateAlphaThreshold && alpha1.at<float>(y, x) > kUpdateAlphaThreshold) {
@@ -409,9 +420,11 @@ struct PixFlow : public OpticalFlowInterface {
       }
     }
     medianBlur(flow, flow, kMedianBlurSize);
+      //当前文件中的方法
     lowAlphaFlowDiffusion(alpha0, alpha1, flow);
   }
 
+    //计划光流更新
   inline void proposeFlowUpdate(
       const Mat& alpha0,
       const Mat& alpha1,
@@ -433,7 +446,7 @@ struct PixFlow : public OpticalFlowInterface {
       currErr = proposalErr;
     }
   }
-
+//低亮度光流扩散 扩散因子值是 1 - 当前坐标两幅图像的alpha值之积
   void lowAlphaFlowDiffusion(const Mat& alpha0, const Mat& alpha1, Mat& flow) {
     Mat blurredFlow;
     GaussianBlur(
@@ -474,12 +487,14 @@ struct PixFlow : public OpticalFlowInterface {
     return a1 + a2 * xR + a3 * yR + a4 * xR * yR;
   }
 
+    //构建金字塔
   vector<Mat> buildPyramid(const Mat& src) {
     vector<Mat> pyramid = {src};
     while (pyramid.size() < kPyrMaxLevels) {
       Size newSize(
         pyramid.back().cols * pyrScaleFactor + 0.5f,
         pyramid.back().rows * pyrScaleFactor + 0.5f);
+        //缩小的阈值
       if (newSize.height <= kPyrMinImageSize || newSize.width <= kPyrMinImageSize) {
         break;
       }
@@ -517,7 +532,7 @@ struct PixFlow : public OpticalFlowInterface {
     float err = sqrtf((i0x - i1x) * (i0x - i1x) + (i0y - i1y) * (i0y - i1y))
       + smoothness * smoothnessCoef
       + verticalRegularizationCoef * fabsf(flowDir.y) / float(I0.cols)
-      + horizontalRegularizationCoef * fabsf(flowDir.x) / float(I0.rows);
+      + horizontalRegularizationCoef * fabsf(flowDir.x) / float(I0.cols);
 
     if (UseDirectionalRegularization) {
       Point2f bf = blurredFlow.at<Point2f>(y, x);

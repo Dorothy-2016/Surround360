@@ -5,6 +5,8 @@ set(CMAKE_CXX_STANDARD 14)
 
 FIND_PACKAGE(OpenCV)
 FIND_PACKAGE(Ceres REQUIRED)
+FIND_PACKAGE(Boost COMPONENTS filesystem system)
+FIND_PACKAGE(folly)
 
 INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/source)
@@ -15,6 +17,9 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/source/calibration)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/source/render)
 INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR})
 INCLUDE_DIRECTORIES(/usr/local/include/eigen3)
+INCLUDE_DIRECTORIES(/usr/local/include/folly)
+
+LINK_DIRECTORIES(folly)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   # required for clang, including AppleClang
@@ -30,8 +35,8 @@ IF(NOT IS_DIRECTORY CMAKE_BUILD_TYPE)
   SET(${CMAKE_BUILD_TYPE} Release ... FORCE)
 ENDIF()
 
-IF(NOT ${CMAKE_BUILD_TYPE} MATCHES Debug)
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64 -O3 -mmmx -mavx -msse -msse3 -funroll-loops -pipe")
+IF(NOT ${CMAKE_BUILD_TYPE} MATCHES Debug) #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64 -O3 -mmmx -mavx -msse -msse2 -msse3 -funroll-loops -pipe")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64 -O3")
 ENDIF()
 
 IF (NOT MSVC)
@@ -180,6 +185,7 @@ TARGET_LINK_LIBRARIES(
   LibVrCamera
   LibJSON
   folly
+  double-conversion
   glog
   gflags
   ${OpenCV_LIBS}
@@ -298,6 +304,7 @@ TARGET_LINK_LIBRARIES(
   LibVrCamera
   LibJSON
   folly
+  double-conversion
   glog
   gflags
   ${OpenCV_LIBS}
@@ -316,6 +323,7 @@ TARGET_LINK_LIBRARIES(
   LibVrCamera
   LibJSON
   folly
+  double-conversion
   gflags
   glog
   ${OpenCV_LIBS}
@@ -361,6 +369,7 @@ IF (DEFINED HALIDE_DIR)
       LibJSON
       gflags
       glog
+      double-conversion
       ${OpenCV_LIBS}
       ${CERES_LIBRARIES}
       Halide
@@ -379,6 +388,7 @@ IF (DEFINED HALIDE_DIR)
     LibJSON
     gflags
     glog
+    double-conversion
     ${OpenCV_LIBS}
     ${CERES_LIBRARIES}
     Halide
@@ -396,6 +406,7 @@ ELSE()
     LibVrCamera
     LibJSON
     gflags
+    double-conversion
     glog
     ${OpenCV_LIBS}
     ${CERES_LIBRARIES}
@@ -425,6 +436,7 @@ IF (DEFINED HALIDE_DIR)
       gflags
       glog
       folly
+      double-conversion
       ${OpenCV_LIBS}
       ${CERES_LIBRARIES}
       Halide
@@ -444,6 +456,7 @@ IF (DEFINED HALIDE_DIR)
       gflags
       glog
       folly
+      double-conversion
       ${OpenCV_LIBS}
       ${CERES_LIBRARIES}
       Halide
@@ -463,6 +476,7 @@ ELSE()
     gflags
     glog
     folly
+    double-conversion
     ${OpenCV_LIBS}
     ${CERES_LIBRARIES}
     ${PLATFORM_SPECIFIC_LIBS}
@@ -482,6 +496,7 @@ TARGET_LINK_LIBRARIES(
   gflags
   glog
   folly
+  double-conversion
   ${OpenCV_LIBS}
   ${CERES_LIBRARIES}
   ${PLATFORM_SPECIFIC_LIBS}

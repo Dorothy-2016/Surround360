@@ -7,6 +7,8 @@
 * of patent rights can be found in the PATENTS file in the same directory.
 */
 
+/*工厂类：运用不同的“FlowAlgorithm”去实例化OpticalFlowInterface.h,其中包括pixflow_low和pixflow_search_20两种方法*/
+
 #pragma once
 
 #include <string>

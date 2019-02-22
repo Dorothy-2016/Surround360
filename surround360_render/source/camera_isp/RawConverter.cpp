@@ -7,6 +7,8 @@
 * of patent rights can be found in the PATENTS file in the same directory.
 */
 
+/*二进制文件转化为RAW*/
+
 #include "RawConverter.h"
 
 using namespace surround360;

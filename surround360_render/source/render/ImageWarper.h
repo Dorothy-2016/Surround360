@@ -6,6 +6,7 @@
 * LICENSE_render file in the root directory of this subproject. An additional grant
 * of patent rights can be found in the PATENTS file in the same directory.
 */
+/*图像整经，缝合环侧14camera的图像*/
 
 #pragma once
 

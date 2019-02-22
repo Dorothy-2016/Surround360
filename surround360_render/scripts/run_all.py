@@ -33,8 +33,7 @@ if USE_GOOEY: from gooey import Gooey, GooeyParser # only load Gooey if needed
 else: Gooey = lambda program_name, image_dir: (lambda fn: fn) # dummy for decorator
 def conditional_decorator(pred, dec): return lambda fn: dec(fn) if pred else fn
 
-script_dir = os.path.dirname(os.path.realpath(__file__))
-
+script_dir = os.path.dirname(os.path.realpath(__file__))  
 # os.path.dirname(DIR) is the parent directory of DIR
 surround360_render_dir = os.path.dirname(script_dir)
 

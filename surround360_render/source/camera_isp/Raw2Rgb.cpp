@@ -6,6 +6,7 @@
 * LICENSE_render file in the root directory of this subproject. An additional grant
 * of patent rights can be found in the PATENTS file in the same directory.
 */
+/*raw文件转化为rgb格式的png*/
 
 #include <stdlib.h>
 
@@ -44,7 +45,7 @@ DEFINE_bool(fast,                   false,                  "Use fastest halide 
 #endif
 DEFINE_bool(disable_tone_curve,     false,                  "By default tone curve is enabled");
 
-// We really want all ISP input bits to fill 16 bits
+// We really want all ISP input bits to fill 16 bits（RAW文件转化为16位深度的图）
 const int kIspInputBitsPerPixel = 16;
 
 void writeIfd(

@@ -9,6 +9,8 @@ Changes in fork:
     loss of precision.
  */
 
+/*整合了json的一个读取器，把camera的各种以json格式存储的参数读入工程项目*/
+
 #pragma once
 
 #include <map>
